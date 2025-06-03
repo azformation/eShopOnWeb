@@ -25,12 +25,8 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddAzureAppConfiguration(options =>
 {
-    var endpoint = builder.Configuration["AppConfig:Endpoint"];
-    if (!string.IsNullOrEmpty(endpoint))
-    {
-        options.Connect(new Uri(endpoint), new DefaultAzureCredential())
-               .UseFeatureFlags();
-    }
+    var connStr = builder.Configuration["AppConfigConnection"];
+    options.Connect(connStr);
 });
 
 // Ajouter les services
