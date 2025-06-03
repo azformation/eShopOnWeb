@@ -1,4 +1,5 @@
-﻿using System.Net.Mime;
+
+using System.Net.Mime;
 using Ardalis.ListStartupServices;
 using Azure.Identity;
 using BlazorAdmin;
@@ -24,11 +25,20 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Charger les variables d'environnement
 builder.Configuration.AddEnvironmentVariables();
 
+// Récupérer la variable
+var connStr = builder.Configuration["AppConfigConnection"];
+
+if (string.IsNullOrWhiteSpace(connStr))
+{
+    throw new InvalidOperationException("AppConfigConnection is missing or empty.");
+}
+
+// Connecter App Configuration
 builder.Configuration.AddAzureAppConfiguration(options =>
 {
-    var connStr = builder.Configuration["AppConfigConnection"];
     options.Connect(connStr);
 });
 
