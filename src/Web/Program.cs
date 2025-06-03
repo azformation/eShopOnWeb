@@ -23,6 +23,7 @@ using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Configuration.AddAzureAppConfiguration(options =>
@@ -31,12 +32,9 @@ builder.Configuration.AddAzureAppConfiguration(options =>
     options.Connect(connStr);
 });
 
-// Ajouter les services
 builder.Services.AddAzureAppConfiguration();
 builder.Services.AddFeatureManagement();
 builder.Logging.AddConsole();
-
-builder.Configuration.AddEnvironmentVariables();
 
 if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Docker")
 {
