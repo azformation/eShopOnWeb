@@ -23,6 +23,7 @@ jobs:
       run: |
         ls
         cd src
+        ls
         dotnet restore
         dotnet publish  **/*.sln -c Release -o ../publish
         
