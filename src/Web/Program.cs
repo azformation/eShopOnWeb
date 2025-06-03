@@ -23,6 +23,19 @@ using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddAzureAppConfiguration(options =>
+{
+    var endpoint = builder.Configuration["AppConfig:Endpoint"];
+    if (!string.IsNullOrEmpty(endpoint))
+    {
+        options.Connect(new Uri(endpoint), new DefaultAzureCredential())
+               .UseFeatureFlags();
+    }
+});
+
+// Ajouter les services
+builder.Services.AddAzureAppConfiguration();
+builder.Services.AddFeatureManagement();
 builder.Logging.AddConsole();
 
 builder.Configuration.AddEnvironmentVariables();
@@ -154,6 +167,7 @@ builder.Services.AddBlazorServices();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
+app.UseAzureAppConfiguration();
 
 if (useAppConfig)
 {
