@@ -23,7 +23,7 @@ jobs:
       run: |
         cd src
         dotnet restore
-        dotnet publish Web/Web.csproj -c Release -o ../publish
+        dotnet publish  **/*.sln -c Release -o ../publish
         
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
