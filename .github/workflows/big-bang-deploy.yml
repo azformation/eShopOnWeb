@@ -18,14 +18,15 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '8.0.x'
-        
+
+    - name: Restore dependencies
+      run: dotnet restore **/*.sln
+
     - name: Build
-      run: |
-        ls
-        cd src
-        ls
-        dotnet restore
-        dotnet publish  **/*.sln -c Release -o ../publish
+      run: dotnet build **/*.sln --configuration Release --no-restore
+
+    - name: Publish
+      run: dotnet publish -c Release -o ../publish
         
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
