@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Feature Flags Test";
+}
+
+<h2>État des Feature Flags</h2>
+
+<div class="alert @(ViewBag.NewUI ? "alert-success" : "alert-secondary")">
+    <strong>Nouvelle UI:</strong> @(ViewBag.NewUI ? "Activée" : "Désactivée")
+</div>
+
+<div class="alert @(ViewBag.MaintenanceMode ? "alert-warning" : "alert-secondary")">
+    <strong>Mode Maintenance:</strong> @(ViewBag.MaintenanceMode ? "Activé" : "Désactivé")
+</div>
