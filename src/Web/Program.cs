@@ -23,6 +23,8 @@ using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+
 builder.Configuration.AddAzureAppConfiguration(options =>
 {
     var connStr = builder.Configuration["AppConfigConnection"];
