@@ -76,6 +76,9 @@ jobs:
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Affiche contenu du Bicep
+      run: cat bicep-template/webapp.bicep
 
     - name: check bicep
       run: az bicep build --file bicep-template/webapp.bicep
