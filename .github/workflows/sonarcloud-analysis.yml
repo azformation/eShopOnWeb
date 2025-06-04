@@ -1,0 +1,126 @@
+name: SonarCloud Analysis for eShopOnWeb
+
+on:
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  sonarcloud-analysis:
+    name: SonarCloud Code Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: 'zulu'
+    
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better analysis
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    
+    - name: Cache SonarCloud scanner
+      id: cache-sonar-scanner
+      uses: actions/cache@v3
+      with:
+        path: ./.sonar/scanner
+        key: ${{ runner.os }}-sonar-scanner
+        restore-keys: ${{ runner.os }}-sonar-scanner
+    
+    - name: Install SonarCloud scanner
+      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ./.sonar/scanner
+        dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+    
+    - name: Restore dependencies
+      run: dotnet restore eShopOnWeb.sln
+    
+    - name: Begin SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        ./.sonar/scanner/dotnet-sonarscanner begin \
+          /k:"${{ secrets.SONAR_PROJECT_KEY }}" \
+          /o:"${{ secrets.SONAR_ORGANIZATION }}" \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+          /d:sonar.exclusions="**/bin/**,**/obj/**,**/*.js,**/*.css,**/Migrations/**,**/wwwroot/lib/**" \
+          /d:sonar.coverage.exclusions="**/Tests/**,**/test/**,**/TestData/**" \
+          /d:sonar.cpd.exclusions="**/Migrations/**,**/*.Designer.cs"
+    
+    - name: Build solution
+      run: dotnet build eShopOnWeb.sln --no-restore --configuration Release
+    
+    - name: Run tests with coverage
+      run: |
+        dotnet test eShopOnWeb.sln \
+          --no-build \
+          --configuration Release \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/ \
+          --logger trx \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+    
+    - name: End SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: TestResults/
+    
+    - name: Comment PR with SonarCloud results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const projectKey = process.env.SONAR_PROJECT_KEY;
+          const organization = process.env.SONAR_ORGANIZATION;
+          
+          const comment = `## 📊 SonarCloud Analysis Results
+          
+          The SonarCloud analysis has been completed for this pull request.
+          
+          🔍 **[View detailed results in SonarCloud](https://sonarcloud.io/project/overview?id=${projectKey})**
+          
+          ### Key Metrics
+          - **Quality Gate:** Check the SonarCloud dashboard for status
+          - **Coverage:** View coverage report in the artifacts
+          - **Security:** Review any security hotspots or vulnerabilities
+          - **Maintainability:** Check code smells and technical debt
+          
+          Please review the results and address any issues before merging.`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+      env:
+        SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
